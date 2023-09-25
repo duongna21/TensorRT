@@ -43,7 +43,7 @@ class Txt2ImgXLPipeline(StableDiffusionPipeline):
                 The scheduler to guide the denoising process. Must be one of the [DPM, LMSD, DDIM, EulerA, PNDM].
         """
         super(Txt2ImgXLPipeline, self).__init__(*args, **kwargs, \
-            scheduler=scheduler, stages=['clip', 'clip2', 'unetxl'],
+            scheduler=scheduler, stages=['clip', 'clip2', 'unetxl', 'vae'],
             pipeline_type=PIPELINE_TYPE.SD_XL_BASE, vae_scaling_factor=0.13025)
         
         # Load additional text tokenizer
