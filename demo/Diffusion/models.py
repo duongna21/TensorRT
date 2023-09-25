@@ -139,7 +139,7 @@ def get_path(version, pipeline, controlnet=None):
         return "stabilityai/stable-diffusion-2-1-base"
     elif version == 'xl-1.0':
         if pipeline.is_sd_xl_base():
-            return "stablediffusionapi/copax-timelessxl-sdxl10"
+            return "stablediffusionapi/SDXL_Niji_SE"
         elif pipeline.is_sd_xl_refiner():
             return "stabilityai/stable-diffusion-xl-refiner-1.0"
         else:
