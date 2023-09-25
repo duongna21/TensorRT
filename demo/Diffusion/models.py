@@ -193,7 +193,7 @@ class BaseModel():
         self.pipeline = pipeline.name
         self.version = version
         self.hf_token = hf_token
-        self.hf_safetensor = pipeline.is_sd_xl()
+        self.hf_safetensor = False #pipeline.is_sd_xl()
         self.device = device
         self.verbose = verbose
         self.path = get_path(version, pipeline, controlnet)
