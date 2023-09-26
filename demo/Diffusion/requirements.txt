@@ -14,3 +14,4 @@ transformers==4.31.0
 onnx-graphsurgeon
 polygraphy
 accelerate
+omegaconf
