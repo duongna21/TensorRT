@@ -462,7 +462,7 @@ class UNet(BaseModel):
         self.controlnet = controlnet
 
     def get_model(self, framework_model_dir):
-        model_opts = {'variant': 'fp16', 'torch_dtype': torch.float16} if self.fp16 else {}
+        model_opts = {'torch_dtype': torch.float16} if self.fp16 else {}
         if self.controlnet:
             unet_model = UNet2DConditionModel.from_pretrained(self.path,
                 subfolder="unet",
@@ -597,7 +597,7 @@ class UNetXL(BaseModel):
         self.time_dim = time_dim
 
     def get_model(self, framework_model_dir):
-        model_opts = {'variant': 'fp16', 'torch_dtype': torch.float16} if self.fp16 else {}
+        model_opts = {'torch_dtype': torch.float16} if self.fp16 else {}
         unet_model_dir = os.path.join(framework_model_dir, self.version, self.pipeline, "unet")
         if not os.path.exists(unet_model_dir):
             model = UNet2DConditionModel.from_pretrained(self.path,
