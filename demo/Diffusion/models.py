@@ -108,12 +108,13 @@ def get_controlnets_path(controlnet_list):
         return None
     return ["lllyasviel/sd-controlnet-" + controlnet for controlnet in controlnet_list]
 
-def get_path(version, pipeline, controlnet=None):
+def get_path(version, pipeline, controlnet=None, custom_pipeline=None):
 
     if controlnet is not None:
         return ["lllyasviel/sd-controlnet-" + modality for modality in controlnet]
-    
-    if version == "1.4":
+    if custom_pipeline:
+        return custom_pipeline
+    elif version == "1.4":
         if pipeline.is_inpaint():
             return "runwayml/stable-diffusion-inpainting"
         else:
@@ -186,7 +187,8 @@ class BaseModel():
         max_batch_size=16,
         text_maxlen=77,
         embedding_dim=768,
-        controlnet=None
+        controlnet=None,
+        custom_pipeline=None,
     ):
 
         self.name = self.__class__.__name__
@@ -196,7 +198,7 @@ class BaseModel():
         self.hf_safetensor = pipeline.is_sd_xl()
         self.device = device
         self.verbose = verbose
-        self.path = get_path(version, pipeline, controlnet)
+        self.path = get_path(version, pipeline, controlnet, custom_pipeline)
 
         self.fp16 = fp16
 
@@ -279,9 +281,10 @@ class CLIP(BaseModel):
         max_batch_size,
         embedding_dim,
         output_hidden_states=False,
-        subfolder="text_encoder"
+        subfolder="text_encoder",
+        custom_pipeline=None,
     ):
-        super(CLIP, self).__init__(version, pipeline, hf_token, device=device, verbose=verbose, max_batch_size=max_batch_size, embedding_dim=embedding_dim)
+        super(CLIP, self).__init__(version, pipeline, hf_token, device=device, verbose=verbose, max_batch_size=max_batch_size, embedding_dim=embedding_dim, custom_pipeline=custom_pipeline)
         self.subfolder = subfolder
 
         # Output the final hidden state
@@ -353,8 +356,8 @@ class CLIP(BaseModel):
         opt.info(self.name + ': finished')
         return opt_onnx_graph
 
-def make_CLIP(version, pipeline, hf_token, device, verbose, max_batch_size, output_hidden_states=False, subfolder="text_encoder"):
-    return CLIP(version, pipeline, hf_token, device=device, verbose=verbose, max_batch_size=max_batch_size, embedding_dim=get_clip_embedding_dim(version, pipeline), output_hidden_states=output_hidden_states, subfolder=subfolder)
+def make_CLIP(version, pipeline, hf_token, device, verbose, max_batch_size, output_hidden_states=False, subfolder="text_encoder", custom_pipeline=None):
+    return CLIP(version, pipeline, hf_token, device=device, verbose=verbose, max_batch_size=max_batch_size, embedding_dim=get_clip_embedding_dim(version, pipeline), output_hidden_states=output_hidden_states, subfolder=subfolder, custom_pipeline=custom_pipeline)
 
 
 class CLIPWithProj(CLIP):
@@ -366,9 +369,10 @@ class CLIPWithProj(CLIP):
         verbose=True,
         max_batch_size=16,
         output_hidden_states=False,
-        subfolder="text_encoder_2"):
-
-        super(CLIPWithProj, self).__init__(version, pipeline, hf_token, device=device, verbose=verbose, max_batch_size=max_batch_size, embedding_dim=get_clipwithproj_embedding_dim(version, pipeline), output_hidden_states=output_hidden_states)
+        subfolder="text_encoder_2",
+        custom_pipeline=None,
+        ):
+        super(CLIPWithProj, self).__init__(version, pipeline, hf_token, device=device, verbose=verbose, max_batch_size=max_batch_size, embedding_dim=get_clipwithproj_embedding_dim(version, pipeline), output_hidden_states=output_hidden_states, custom_pipeline=custom_pipeline)
         self.subfolder = subfolder
 
     def get_model(self, framework_model_dir):
@@ -395,8 +399,8 @@ class CLIPWithProj(CLIP):
 
         return output
 
-def make_CLIPWithProj(version, pipeline, hf_token, device, verbose, max_batch_size, subfolder="text_encoder_2", output_hidden_states=False):
-    return CLIPWithProj(version, pipeline, hf_token, device=device, verbose=verbose, max_batch_size=max_batch_size, subfolder=subfolder, output_hidden_states=output_hidden_states)
+def make_CLIPWithProj(version, pipeline, hf_token, device, verbose, max_batch_size, subfolder="text_encoder_2", output_hidden_states=False, custom_pipeline=None):
+    return CLIPWithProj(version, pipeline, hf_token, device=device, verbose=verbose, max_batch_size=max_batch_size, subfolder=subfolder, output_hidden_states=output_hidden_states, custom_pipeline=custom_pipeline)
 
 class UNet2DConditionControlNetModel(torch.nn.Module):
     def __init__(self, unet, controlnets) -> None:
@@ -585,9 +589,10 @@ class UNetXL(BaseModel):
         max_batch_size=16,
         text_maxlen=77,
         unet_dim=4,
-        time_dim=6
+        time_dim=6,
+        custom_pipeline=None,
     ):
-        super(UNetXL, self).__init__(version, pipeline, hf_token, fp16=fp16, device=device, verbose=verbose, max_batch_size=max_batch_size, text_maxlen=text_maxlen, embedding_dim=get_unet_embedding_dim(version, pipeline))
+        super(UNetXL, self).__init__(version, pipeline, hf_token, fp16=fp16, device=device, verbose=verbose, max_batch_size=max_batch_size, text_maxlen=text_maxlen, embedding_dim=get_unet_embedding_dim(version, pipeline), custom_pipeline=custom_pipeline)
         self.unet_dim = unet_dim
         self.time_dim = time_dim
 
@@ -657,12 +662,12 @@ class UNetXL(BaseModel):
             }
         )
 
-def make_UNetXL(version, pipeline, hf_token, device, verbose, max_batch_size):
+def make_UNetXL(version, pipeline, hf_token, device, verbose, max_batch_size, custom_pipeline=None):
     # Disable torch SDPA
     if hasattr(F, "scaled_dot_product_attention"):
         delattr(F, "scaled_dot_product_attention")
     return UNetXL(version, pipeline, hf_token, fp16=True,  device=device, verbose=verbose,
-                max_batch_size=max_batch_size, unet_dim=4, time_dim=(5 if pipeline.is_sd_xl_refiner() else 6))
+                max_batch_size=max_batch_size, unet_dim=4, time_dim=(5 if pipeline.is_sd_xl_refiner() else 6), custom_pipeline=custom_pipeline)
 
 class VAE(BaseModel):
     def __init__(self,
@@ -672,8 +677,9 @@ class VAE(BaseModel):
         device,
         verbose,
         max_batch_size,
+        custom_pipeline=None,
     ):
-        super(VAE, self).__init__(version, pipeline, hf_token, device=device, verbose=verbose, max_batch_size=max_batch_size)
+        super(VAE, self).__init__(version, pipeline, hf_token, device=device, verbose=verbose, max_batch_size=max_batch_size, custom_pipeline=custom_pipeline)
 
     def get_model(self, framework_model_dir):
         vae_decoder_model_path = os.path.join(framework_model_dir, self.version, self.pipeline, "vae_decoder")
@@ -721,8 +727,8 @@ class VAE(BaseModel):
         return torch.randn(batch_size, 4, latent_height, latent_width, dtype=torch.float32, device=self.device)
 
 
-def make_VAE(version, pipeline, hf_token, device, verbose, max_batch_size):
-    return VAE(version, pipeline, hf_token, device=device, verbose=verbose, max_batch_size=max_batch_size)
+def make_VAE(version, pipeline, hf_token, device, verbose, max_batch_size, custom_pipeline=None):
+    return VAE(version, pipeline, hf_token, device=device, verbose=verbose, max_batch_size=max_batch_size, custom_pipeline=custom_pipeline)
 
 class TorchVAEEncoder(torch.nn.Module):
     def __init__(self, version, pipeline, hf_token, device, path, framework_model_dir, hf_safetensor=False):
@@ -795,7 +801,7 @@ class VAEEncoder(BaseModel):
 def make_VAEEncoder(version, pipeline, hf_token, device, verbose, max_batch_size):
     return VAEEncoder(version, pipeline, hf_token, device=device, verbose=verbose, max_batch_size=max_batch_size)
 
-def make_tokenizer(version, pipeline, hf_token, framework_model_dir, subfolder="tokenizer"):
+def make_tokenizer(version, pipeline, hf_token, framework_model_dir, subfolder="tokenizer", custom_pipeline=None):
     tokenizer_model_dir = os.path.join(framework_model_dir, version, pipeline.name, subfolder)
     if not os.path.exists(tokenizer_model_dir):
         model = CLIPTokenizer.from_pretrained(get_path(version, pipeline),

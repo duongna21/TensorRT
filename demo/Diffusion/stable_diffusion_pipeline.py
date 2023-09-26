@@ -220,6 +220,7 @@ class StableDiffusionPipeline:
         enable_all_tactics=False,
         timing_cache=None,
         onnx_refit_dir=None,
+        custom_pipeline=None,
     ):
         """
         Build and load engines for TensorRT accelerated inference.
@@ -275,7 +276,7 @@ class StableDiffusionPipeline:
         # Load pipeline models
         models_args = {'version': self.version, 'pipeline': self.pipeline_type,
             'hf_token': self.hf_token, 'device': self.device,
-            'verbose': self.verbose, 'max_batch_size': self.max_batch_size}
+            'verbose': self.verbose, 'max_batch_size': self.max_batch_size, 'custom_pipeline': custom_pipeline}
 
         if 'vae_encoder' in self.stages:
             self.models['vae_encoder'] = make_VAEEncoder(**models_args)

@@ -33,6 +33,7 @@ class Txt2ImgXLPipeline(StableDiffusionPipeline):
         self,
         scheduler="DDIM",
         refiner=False,
+        custom_pipeline=None,
         *args, **kwargs
     ):
         """
@@ -47,7 +48,7 @@ class Txt2ImgXLPipeline(StableDiffusionPipeline):
             pipeline_type=PIPELINE_TYPE.SD_XL_BASE, vae_scaling_factor=0.13025)
         
         # Load additional text tokenizer
-        self.tokenizer2 = make_tokenizer(self.version, self.pipeline_type, self.hf_token, self.framework_model_dir, subfolder="tokenizer_2")
+        self.tokenizer2 = make_tokenizer(self.version, self.pipeline_type, self.hf_token, self.framework_model_dir, subfolder="tokenizer_2", custom_pipeline=custom_pipeline)
 
         self.refiner = refiner
 
